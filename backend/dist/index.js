@@ -1,26 +1,27 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const env_1 = require("./config/env");
-const path_1 = __importDefault(require("path"));
-const app = (0, express_1.default)();
-const currentDir = path_1.default.resolve();
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { ENV } from './config/env.js';
+const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 app.get('/api/health', (req, res) => {
     res.send('Hello, World!');
 });
 // Make our app ready for deployment
 // Serve admin (React/Vite) build as static assets
-if (env_1.ENV.NODE_ENV === 'production') {
-    app.use(express_1.default.static(path_1.default.join(currentDir, '../admin/dist')));
+if (ENV.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, '../../admin/dist')));
     app.get('/{*any}', (req, res) => {
-        res.sendFile(path_1.default.join(currentDir, '../admin', 'dist', 'index.html'));
+        res.sendFile(path.join(__dirname, '../../admin/dist/index.html'), (err) => {
+            if (err) {
+                res.status(500).send('Error loading application');
+            }
+        });
     });
 }
-app.listen(env_1.ENV.PORT, () => {
-    console.log(`Server is running on port ${env_1.ENV.PORT}`);
-    console.log(`Dirname  ${currentDir}`);
+const PORT = ENV.PORT || '3000';
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${ENV.PORT}`);
 });
 //# sourceMappingURL=index.js.map
