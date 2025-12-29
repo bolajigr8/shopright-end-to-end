@@ -2,10 +2,16 @@ import express from 'express'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { ENV } from './config/env.js'
+import { connectDB } from './config/db.js'
+import { clerkMiddleware } from '@clerk/express'
+
 const app = express()
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+
+// adds auth object under the request
+app.use(clerkMiddleware())
 
 app.get('/api/health', (req, res) => {
   res.send('Hello, World!')
@@ -30,3 +36,10 @@ const PORT = ENV.PORT || '3000'
 app.listen(PORT, () => {
   console.log(`Server is running on port ${ENV.PORT}`)
 })
+
+// Connect to MongoDB in the background, do not crash server if it fails
+connectDB()
+  .then(() => console.log('Database is connected'))
+  .catch((err) => {
+    console.error('MongoDB connection error:', err)
+  })
