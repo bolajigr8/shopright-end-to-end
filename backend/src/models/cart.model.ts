@@ -1,9 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose'
 
-/* =======================
-   Interfaces
-======================= */
-
 interface CartItem {
   product: mongoose.Types.ObjectId
   quantity: number
@@ -54,10 +50,6 @@ const cartSchema = new Schema<CartDocument>(
   },
   { timestamps: true }
 )
-
-/* =======================
-   Model
-======================= */
 
 export const Cart: Model<CartDocument> =
   mongoose.models.Cart || mongoose.model<CartDocument>('Cart', cartSchema)

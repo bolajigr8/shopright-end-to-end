@@ -1,9 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose'
 
-/* =======================
-   Interface
-======================= */
-
 interface ProductDocument extends Document {
   name: string
   description: string
