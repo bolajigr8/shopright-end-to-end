@@ -38,40 +38,64 @@ const syncUser = inngest.createFunction(
   { id: 'sync-user' },
   { event: 'clerk/user.created' },
   async ({ event }: { event: ClerkUserCreatedEvent }) => {
-    await connectDB()
+    try {
+      await connectDB()
 
-    const { id, email_addresses, first_name, last_name, image_url } = event.data
+      const { id, email_addresses, first_name, last_name, image_url } =
+        event.data
 
-    const newUser = {
-      clerkId: id,
-      email: email_addresses?.[0]?.email_address ?? '',
-      name: `${first_name ?? ''} ${last_name ?? ''}`.trim() || 'User',
-      imageUrl: image_url ?? '',
-      addresses: [],
-      wishlist: [],
+      const email = email_addresses?.[0]?.email_address
+      if (!email) {
+        throw new Error(`User ${id} has no email address`)
+      }
+
+      // Check if user already exists (idempotency)
+      const existingUser = await User.findOne({ clerkId: id })
+      if (existingUser) {
+        console.log(`User with clerkId ${id} already exists, skipping creation`)
+        return { status: 'skipped', userId: existingUser._id }
+      }
+
+      const newUser = {
+        clerkId: id,
+        email,
+        name: `${first_name ?? ''} ${last_name ?? ''}`.trim() || 'User',
+        imageUrl: image_url ?? '',
+        addresses: [],
+        wishlist: [],
+      }
+
+      const createdUser = await User.create(newUser)
+      return { status: 'created', userId: createdUser._id }
+    } catch (error) {
+      console.error('Error syncing user:', error)
+      throw error
     }
-
-    await User.create(newUser)
   }
 )
 
 /* =======================
    Delete User Function
 ======================= */
-
 const deleteUserFromDB = inngest.createFunction(
   { id: 'delete-user-from-db' },
   { event: 'clerk/user.deleted' },
   async ({ event }: { event: ClerkUserDeletedEvent }) => {
-    await connectDB()
+    try {
+      await connectDB()
 
-    const { id } = event.data
-    await User.deleteOne({ clerkId: id })
+      const { id } = event.data
+      const result = await User.deleteOne({ clerkId: id })
+
+      return {
+        status: result.deletedCount > 0 ? 'deleted' : 'not_found',
+        deletedCount: result.deletedCount,
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error)
+      throw error
+    }
   }
 )
-
-/* =======================
-   Export Functions
-======================= */
 
 export const functions = [syncUser, deleteUserFromDB]
