@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon --watch src --ext ts,js --exec \"ts-node src/index.ts\"",
+    "dev": "nodemon --watch src --ext ts,js --exec \"node --loader ts-node/esm src/index.ts\"",
     "build": "tsc",
     "start": "node dist/index.js"
   },
@@ -21,7 +21,10 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@clerk/express": "^1.7.60",
+    "cloudinary": "^2.8.0",
     "dotenv": "^17.2.3",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "mongoose": "^8.20.4"
   }
 }
