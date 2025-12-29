@@ -33,13 +33,15 @@ if (ENV.NODE_ENV === 'production') {
 
 const PORT = ENV.PORT || '3000'
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${ENV.PORT}`)
-})
-
-// Connect to MongoDB in the background, do not crash server if it fails
+// Connect to MongoDB before starting server
 connectDB()
-  .then(() => console.log('Database is connected'))
+  .then(() => {
+    console.log('Database is connected')
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${ENV.PORT}`)
+    })
+  })
   .catch((err) => {
     console.error('MongoDB connection error:', err)
+    process.exit(1)
   })

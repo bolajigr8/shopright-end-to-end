@@ -6,13 +6,15 @@ export const connectDB = async (): Promise<void> => {
     const mongoURI = ENV.DB_URL
 
     if (!mongoURI) {
-      throw new Error('MONGODB_URL is not defined in the environment variables')
+      throw new Error('DB_URL is not defined in the environment variables')
     }
 
     await mongoose.connect(mongoURI)
 
+    // Register SIGINT handler once at module level
     process.on('SIGINT', async () => {
       await mongoose.connection.close()
+      console.log('MongoDB connection closed due to app termination')
       process.exit(0)
     })
   } catch (error) {
