@@ -2,12 +2,8 @@ import { Request, Response, NextFunction } from 'express'
 import { Order } from '../models/order.model.js'
 import { Product } from '../models/product.model.js'
 import { Review } from '../models/review.model.js'
-import { UserDocument } from '../models/user.model.js'
-
-// Extend Express Request to include authenticated user
-interface AuthRequest extends Request {
-  user: UserDocument
-}
+import { AuthRequest } from '../types/types.js'
+import mongoose from 'mongoose'
 
 interface OrderItem {
   product: {
@@ -49,6 +45,9 @@ export async function createOrder(
   res: Response,
   next: NextFunction
 ): Promise<void> {
+  const session = await mongoose.startSession()
+  session.startTransaction()
+
   try {
     const user = (req as AuthRequest).user
     const { orderItems, shippingAddress, paymentResult, totalPrice } =
@@ -59,14 +58,28 @@ export async function createOrder(
       return
     }
 
+    if (!shippingAddress || !paymentResult || !totalPrice) {
+      res.status(400).json({ error: 'Missing required order information' })
+      return
+    }
+
+    if (totalPrice <= 0) {
+      res.status(400).json({ error: 'Invalid total price' })
+      return
+    }
+
     // validate products and stock
     for (const item of orderItems) {
-      const product = await Product.findById(item.product._id)
+      const product = await Product.findById(item.product._id).session(session)
       if (!product) {
+        await session.abortTransaction()
+
         res.status(404).json({ error: `Product ${item.name} not found` })
         return
       }
       if (product.stock < item.quantity) {
+        await session.abortTransaction()
+
         res
           .status(400)
           .json({ error: `Insufficient stock for ${product.name}` })
@@ -74,26 +87,41 @@ export async function createOrder(
       }
     }
 
-    const order = await Order.create({
-      user: user._id,
-      clerkId: user.clerkId,
-      orderItems,
-      shippingAddress,
-      paymentResult,
-      totalPrice,
-    })
+    const order = await Order.create(
+      [
+        {
+          user: user._id,
+          clerkId: user.clerkId,
+          orderItems,
+          shippingAddress,
+          paymentResult,
+          totalPrice,
+        },
+      ],
+      { session }
+    )
 
     // update product stock
     for (const item of orderItems) {
-      await Product.findByIdAndUpdate(item.product._id, {
-        $inc: { stock: -item.quantity },
-      })
+      await Product.findByIdAndUpdate(
+        item.product._id,
+        {
+          $inc: { stock: -item.quantity },
+        },
+        { session }
+      )
     }
+
+    await session.commitTransaction()
 
     res.status(201).json({ message: 'Order created successfully', order })
   } catch (error) {
     console.error('Error in createOrder controller:', error)
+
+    await session.abortTransaction()
     res.status(500).json({ error: 'Internal server error' })
+  } finally {
+    session.endSession()
   }
 }
 

@@ -3,12 +3,7 @@ import cloudinary from '../config/cloudinary.js'
 import { Product } from '../models/product.model.js'
 import { Order } from '../models/order.model.js'
 import { User } from '../models/user.model.js'
-
-// Fix: Update MulterRequest to match Multer's actual type definition
-interface MulterRequest extends Request {
-  files?: Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[] }
-  user?: any
-}
+import { MulterRequest } from '../types/types.js'
 
 export async function createProduct(
   req: MulterRequest,

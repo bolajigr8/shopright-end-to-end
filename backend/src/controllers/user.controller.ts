@@ -1,11 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { Types } from 'mongoose'
 import { User, UserDocument } from '../models/user.model.js'
-
-// Extend Express Request to include authenticated user
-export interface AuthRequest extends Request {
-  user: UserDocument
-}
+import { AuthRequest } from '../types/types.js'
 
 interface AddressBody {
   label?: string
