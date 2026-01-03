@@ -15,7 +15,7 @@ interface Address {
   isDefault: boolean
 }
 
-interface UserDocument extends Document {
+export interface UserDocument extends Document {
   email: string
   name: string
   imageUrl: string
@@ -31,7 +31,7 @@ interface UserDocument extends Document {
    Address Schema
 ======================= */
 
-const addressSchema = new Schema<Address>(
+const addressSchema = new mongoose.Schema<Address>(
   {
     label: { type: String, required: true },
     fullName: { type: String, required: true },
