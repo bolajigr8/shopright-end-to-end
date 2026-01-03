@@ -1,0 +1,123 @@
+import { Request, Response } from 'express'
+import mongoose from 'mongoose'
+import { Order } from '../models/order.model.js'
+import { Review } from '../models/review.model.js'
+import { Product } from '../models/product.model.js'
+import { AuthRequest } from '../types/types.js'
+
+/* =======================
+   Request Body Interfaces
+======================= */
+
+interface CreateReviewBody {
+  productId: string
+  orderId: string
+  rating: number
+}
+
+/* =======================
+   Controllers
+======================= */
+
+export async function createReview(req: Request, res: Response): Promise<void> {
+  try {
+    const { productId, orderId, rating } = req.body as CreateReviewBody
+
+    if (!rating || rating < 1 || rating > 5) {
+      res.status(400).json({ error: 'Rating must be between 1 and 5' })
+      return
+    }
+
+    const user = (req as AuthRequest).user
+
+    // verify order exists and is delivered
+    const order = await Order.findById(orderId)
+    if (!order) {
+      res.status(404).json({ error: 'Order not found' })
+      return
+    }
+
+    if (order.clerkId !== user.clerkId) {
+      res.status(403).json({ error: 'Not authorized to review this order' })
+      return
+    }
+
+    if (order.status !== 'delivered') {
+      res.status(400).json({ error: 'Can only review delivered orders' })
+      return
+    }
+
+    // verify product is in the order
+    const productInOrder = order.orderItems.find(
+      (item) => item.product.toString() === productId.toString()
+    )
+    if (!productInOrder) {
+      res.status(400).json({ error: 'Product not found in this order' })
+      return
+    }
+
+    // atomic update or create
+    const review = await Review.findOneAndUpdate(
+      { productId, userId: user._id },
+      { rating, orderId, productId, userId: user._id },
+      { new: true, upsert: true, runValidators: true }
+    )
+
+    // update the product rating with atomic aggregation
+    const reviews = await Review.find({ productId })
+    const totalRating = reviews.reduce((sum, rev) => sum + rev.rating, 0)
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      {
+        averageRating: totalRating / reviews.length,
+        totalReviews: reviews.length,
+      },
+      { new: true, runValidators: true }
+    )
+
+    if (!updatedProduct) {
+      await Review.findByIdAndDelete(review._id)
+      res.status(404).json({ error: 'Product not found' })
+      return
+    }
+
+    res.status(201).json({ message: 'Review submitted successfully', review })
+  } catch (error) {
+    console.error('Error in createReview controller:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+export async function deleteReview(req: Request, res: Response): Promise<void> {
+  try {
+    const { reviewId } = req.params
+
+    const user = (req as AuthRequest).user
+
+    const review = await Review.findById(reviewId)
+    if (!review) {
+      res.status(404).json({ error: 'Review not found' })
+      return
+    }
+
+    if (review.userId.toString() !== user._id.toString()) {
+      res.status(403).json({ error: 'Not authorized to delete this review' })
+      return
+    }
+
+    const productId = review.productId
+    await Review.findByIdAndDelete(reviewId)
+
+    const reviews = await Review.find({ productId })
+    const totalRating = reviews.reduce((sum, rev) => sum + rev.rating, 0)
+    await Product.findByIdAndUpdate(productId, {
+      averageRating: reviews.length > 0 ? totalRating / reviews.length : 0,
+      totalReviews: reviews.length,
+    })
+
+    res.status(200).json({ message: 'Review deleted successfully' })
+  } catch (error) {
+    console.error('Error in deleteReview controller:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+}
