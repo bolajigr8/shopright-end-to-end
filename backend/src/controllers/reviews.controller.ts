@@ -23,7 +23,7 @@ export async function createReview(req: Request, res: Response): Promise<void> {
   try {
     const { productId, orderId, rating } = req.body as CreateReviewBody
 
-    if (!rating || rating < 1 || rating > 5) {
+    if (typeof rating !== 'number' || !rating || rating < 1 || rating > 5) {
       res.status(400).json({ error: 'Rating must be between 1 and 5' })
       return
     }
