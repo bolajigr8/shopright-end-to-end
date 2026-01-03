@@ -20,7 +20,7 @@ app.use(clerkMiddleware())
 // Inngest webhook endpoint
 app.use('/api/inngest', serve({ client: inngest, functions }))
 
-app.use('api/admin', adminRoutes)
+app.use('/api/admin', adminRoutes)
 
 app.get('/api/health', (req, res) => {
   res.send('Hello, World!')
