@@ -79,8 +79,8 @@ export async function addToCart(req: Request, res: Response): Promise<void> {
       (item) => item.product.toString() === productId
     )
     if (existingItem) {
-      // increment quantity by 1
-      const newQuantity = existingItem.quantity + 1
+      // increment quantity by requested amount
+      const newQuantity = existingItem.quantity + quantity
       if (product.stock < newQuantity) {
         res.status(400).json({ error: 'Insufficient stock' })
         return

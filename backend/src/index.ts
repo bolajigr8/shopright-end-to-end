@@ -20,13 +20,13 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 app.use(express.json())
+app.use(cors({ origin: ENV.CLIENT_URL, credentials: true })) // credentials: true allows the browser to send the cookies to the server with the request
+
 // adds auth object under the request
 app.use(clerkMiddleware())
 
 // Inngest webhook endpoint
 app.use('/api/inngest', serve({ client: inngest, functions }))
-
-app.use(cors({ origin: ENV.CLIENT_URL, credentials: true })) // credentials: true allows the browser to send the cookies to the server with the request
 
 app.use('/api/admin', adminRoutes)
 app.use('/api/users', userRoutes)
