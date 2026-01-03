@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model } from 'mongoose'
+import mongoose, { Schema, Document, Model, Types } from 'mongoose'
 
 /* =======================
    TypeScript Interfaces
@@ -21,8 +21,8 @@ export interface UserDocument extends Document {
   imageUrl: string
   clerkId: string
   stripeCustomerId: string
-  addresses: Address[]
-  wishlist: mongoose.Types.ObjectId[]
+  addresses: Types.DocumentArray<Address>
+  wishlist: Types.Array<mongoose.Types.ObjectId>
   createdAt: Date
   updatedAt: Date
 }
@@ -42,7 +42,7 @@ const addressSchema = new mongoose.Schema<Address>(
     phoneNumber: { type: String, required: true },
     isDefault: { type: Boolean, default: false },
   },
-  { _id: false } // prevents extra _id for subdocuments
+  { _id: true }
 )
 
 /* =======================
