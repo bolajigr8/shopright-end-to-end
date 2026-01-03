@@ -77,7 +77,7 @@ export async function createReview(req: Request, res: Response): Promise<void> {
       )
 
       // update the product rating with atomic aggregation
-      const reviews = await Review.find({ productId })
+      const reviews = await Review.find({ productId }, null, { session })
       const totalRating = reviews.reduce((sum, rev) => sum + rev.rating, 0)
       const updatedProduct = await Product.findByIdAndUpdate(
         productId,
@@ -85,7 +85,7 @@ export async function createReview(req: Request, res: Response): Promise<void> {
           averageRating: totalRating / reviews.length,
           totalReviews: reviews.length,
         },
-        { new: true, runValidators: true }
+        { new: true, runValidators: true, session }
       )
 
       if (!updatedProduct) {
