@@ -125,15 +125,14 @@ export async function updateAddress(
       })
     }
 
-    address.label = label || address.label
-    address.fullName = fullName || address.fullName
-    address.streetAddress = streetAddress || address.streetAddress
-    address.city = city || address.city
-    address.state = state || address.state
-    address.zipCode = zipCode || address.zipCode
-    address.phoneNumber = phoneNumber || address.phoneNumber
-    address.isDefault = isDefault !== undefined ? isDefault : address.isDefault
-
+    address.label = label ?? address.label
+    address.fullName = fullName ?? address.fullName
+    address.streetAddress = streetAddress ?? address.streetAddress
+    address.city = city ?? address.city
+    address.state = state ?? address.state
+    address.zipCode = zipCode ?? address.zipCode
+    address.phoneNumber = phoneNumber ?? address.phoneNumber
+    address.isDefault = isDefault ?? address.isDefault
     await user.save()
 
     res.status(200).json({
@@ -177,10 +176,15 @@ export async function addToWishlist(
     const { productId } = req.body as WishlistBody
     const user = (req as AuthRequest).user
 
+    if (!productId || !Types.ObjectId.isValid(productId)) {
+      res.status(400).json({ error: 'Invalid or missing productId' })
+      return
+    }
+
     const productObjectId = new Types.ObjectId(productId)
 
     // check if product is already in the wishlist
-    if (user.wishlist.includes(productObjectId)) {
+    if (user.wishlist.some((id) => id.equals(productObjectId))) {
       res.status(400).json({ error: 'Product already in wishlist' })
       return
     }
@@ -206,10 +210,15 @@ export async function removeFromWishlist(
     const { productId } = req.params
     const user = (req as AuthRequest).user
 
+    if (!productId || !Types.ObjectId.isValid(productId)) {
+      res.status(400).json({ error: 'Invalid or missing productId' })
+      return
+    }
+
     const productObjectId = new Types.ObjectId(productId)
 
     // check if product is already in the wishlist
-    if (!user.wishlist.includes(productObjectId)) {
+    if (!user.wishlist.some((id) => id.equals(productObjectId))) {
       res.status(400).json({ error: 'Product not found in wishlist' })
       return
     }

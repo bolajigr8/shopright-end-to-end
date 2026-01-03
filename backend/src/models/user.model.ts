@@ -42,7 +42,7 @@ const addressSchema = new mongoose.Schema<Address>(
     phoneNumber: { type: String, required: true },
     isDefault: { type: Boolean, default: false },
   },
-  { _id: true } // prevents extra _id for subdocuments
+  { _id: false }
 )
 
 /* =======================
