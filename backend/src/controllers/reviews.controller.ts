@@ -28,6 +28,16 @@ export async function createReview(req: Request, res: Response): Promise<void> {
       return
     }
 
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      res.status(400).json({ error: 'Invalid product ID format' })
+      return
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      res.status(400).json({ error: 'Invalid order ID format' })
+      return
+    }
+
     const user = (req as AuthRequest).user
 
     // verify order exists and is delivered
@@ -55,33 +65,41 @@ export async function createReview(req: Request, res: Response): Promise<void> {
       res.status(400).json({ error: 'Product not found in this order' })
       return
     }
+    const session = await mongoose.startSession()
+    session.startTransaction()
 
-    // atomic update or create
-    const review = await Review.findOneAndUpdate(
-      { productId, userId: user._id },
-      { rating, orderId, productId, userId: user._id },
-      { new: true, upsert: true, runValidators: true }
-    )
+    try {
+      // atomic update or create
+      const review = await Review.findOneAndUpdate(
+        { productId, userId: user._id },
+        { rating, orderId, productId, userId: user._id },
+        { new: true, upsert: true, runValidators: true, session }
+      )
 
-    // update the product rating with atomic aggregation
-    const reviews = await Review.find({ productId })
-    const totalRating = reviews.reduce((sum, rev) => sum + rev.rating, 0)
-    const updatedProduct = await Product.findByIdAndUpdate(
-      productId,
-      {
-        averageRating: totalRating / reviews.length,
-        totalReviews: reviews.length,
-      },
-      { new: true, runValidators: true }
-    )
+      // update the product rating with atomic aggregation
+      const reviews = await Review.find({ productId })
+      const totalRating = reviews.reduce((sum, rev) => sum + rev.rating, 0)
+      const updatedProduct = await Product.findByIdAndUpdate(
+        productId,
+        {
+          averageRating: totalRating / reviews.length,
+          totalReviews: reviews.length,
+        },
+        { new: true, runValidators: true }
+      )
 
-    if (!updatedProduct) {
-      await Review.findByIdAndDelete(review._id)
-      res.status(404).json({ error: 'Product not found' })
-      return
+      if (!updatedProduct) {
+        throw new Error('Product not found')
+      }
+
+      await session.commitTransaction()
+      res.status(201).json({ message: 'Review submitted successfully', review })
+    } catch (error) {
+      await session.abortTransaction()
+      throw error
+    } finally {
+      session.endSession()
     }
-
-    res.status(201).json({ message: 'Review submitted successfully', review })
   } catch (error) {
     console.error('Error in createReview controller:', error)
     res.status(500).json({ error: 'Internal server error' })
@@ -91,6 +109,11 @@ export async function createReview(req: Request, res: Response): Promise<void> {
 export async function deleteReview(req: Request, res: Response): Promise<void> {
   try {
     const { reviewId } = req.params
+
+    if (!mongoose.Types.ObjectId.isValid(reviewId)) {
+      res.status(400).json({ error: 'Invalid review ID format' })
+      return
+    }
 
     const user = (req as AuthRequest).user
 
@@ -106,16 +129,33 @@ export async function deleteReview(req: Request, res: Response): Promise<void> {
     }
 
     const productId = review.productId
-    await Review.findByIdAndDelete(reviewId)
 
-    const reviews = await Review.find({ productId })
-    const totalRating = reviews.reduce((sum, rev) => sum + rev.rating, 0)
-    await Product.findByIdAndUpdate(productId, {
-      averageRating: reviews.length > 0 ? totalRating / reviews.length : 0,
-      totalReviews: reviews.length,
-    })
+    const session = await mongoose.startSession()
+    session.startTransaction()
 
-    res.status(200).json({ message: 'Review deleted successfully' })
+    try {
+      await Review.findByIdAndDelete(reviewId, { session })
+
+      const reviews = await Review.find({ productId }, null, { session })
+      const totalRating = reviews.reduce((sum, rev) => sum + rev.rating, 0)
+
+      await Product.findByIdAndUpdate(
+        productId,
+        {
+          averageRating: reviews.length > 0 ? totalRating / reviews.length : 0,
+          totalReviews: reviews.length,
+        },
+        { session }
+      )
+
+      await session.commitTransaction()
+      res.status(200).json({ message: 'Review deleted successfully' })
+    } catch (error) {
+      await session.abortTransaction()
+      throw error
+    } finally {
+      session.endSession()
+    }
   } catch (error) {
     console.error('Error in deleteReview controller:', error)
     res.status(500).json({ error: 'Internal server error' })

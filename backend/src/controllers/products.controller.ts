@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import { Product } from '../models/product.model.js'
+import { Types } from 'mongoose'
 
 export async function getProductById(
   req: Request,
@@ -7,6 +8,12 @@ export async function getProductById(
 ): Promise<void> {
   try {
     const { id } = req.params
+
+    if (!Types.ObjectId.isValid(id)) {
+      res.status(400).json({ message: 'Invalid product ID format' })
+      return
+    }
+
     const product = await Product.findById(id)
 
     if (!product) {
