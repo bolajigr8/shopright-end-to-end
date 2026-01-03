@@ -54,7 +54,23 @@ export async function createOrder(
       req.body as CreateOrderBody
 
     if (!orderItems || orderItems.length === 0) {
+      await session.abortTransaction()
+
       res.status(400).json({ error: 'No order items' })
+      return
+    }
+
+    if (!shippingAddress || !paymentResult || !totalPrice) {
+      await session.abortTransaction()
+
+      res.status(400).json({ error: 'Missing required order information' })
+      return
+    }
+
+    if (totalPrice <= 0) {
+      await session.abortTransaction()
+
+      res.status(400).json({ error: 'Invalid total price' })
       return
     }
 
