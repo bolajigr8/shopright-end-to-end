@@ -14,6 +14,7 @@
   "license": "ISC",
   "type": "module",
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^25.0.3",
     "nodemon": "^3.1.11",
@@ -24,6 +25,7 @@
     "@clerk/express": "^1.7.60",
     "@types/multer": "^2.0.0",
     "cloudinary": "^2.8.0",
+    "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "inngest": "^3.48.1",
