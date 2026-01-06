@@ -21,8 +21,5 @@
   "bugs": {
     "url": "https://github.com/bolajigr8/shopright-end-to-end/issues"
   },
-  "homepage": "https://github.com/bolajigr8/shopright-end-to-end#readme",
-  "devDependencies": {
-    "daisyui": "^5.5.14"
-  }
+  "homepage": "https://github.com/bolajigr8/shopright-end-to-end#readme"
 }
