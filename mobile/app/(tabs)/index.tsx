@@ -25,7 +25,8 @@ const ShopScreen = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
 
-  const { data: products, isLoading, isError } = useProducts()
+  const { data: products, isLoading, isError, error } = useProducts()
+  const errorMessage = error?.message
 
   const filteredProducts = useMemo(() => {
     if (!products) return []
@@ -136,6 +137,7 @@ const ShopScreen = () => {
           {/* PRODUCTS GRID */}
           <ProductsGrid
             products={filteredProducts}
+            errorMessage={errorMessage}
             isLoading={isLoading}
             isError={isError}
           />

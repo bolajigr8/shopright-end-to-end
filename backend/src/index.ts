@@ -12,6 +12,7 @@ import orderRoutes from './routes/order.route.js'
 import reviewsRoutes from './routes/review.route.js'
 import productsRoutes from './routes/product.route.js'
 import cartRoutes from './routes/cart.route.js'
+import paymentRoutes from './routes/payment.route.js'
 import cors from 'cors'
 
 const app = express()
@@ -34,6 +35,7 @@ app.use('/api/orders', orderRoutes)
 app.use('/api/reviews', reviewsRoutes)
 app.use('/api/products', productsRoutes)
 app.use('/api/cart', cartRoutes)
+app.use('/api/payment', paymentRoutes)
 
 app.get('/api/health', (req, res) => {
   res.send('Hello, World!')
