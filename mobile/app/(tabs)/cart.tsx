@@ -113,7 +113,7 @@ const CartScreen = () => {
 
       const { error: initError } = await initPaymentSheet({
         paymentIntentClientSecret: data.clientSecret,
-        merchantDisplayName: 'Your Store Name',
+        merchantDisplayName: 'Micbol Shopright',
       })
 
       if (initError) {
