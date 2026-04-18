@@ -5,7 +5,7 @@
 ✨ **Highlights:**
 
 - 📱 Fully Functional E-Commerce Mobile App (React Native + Expo)
-- 🔐 Secure Authentication with Clerk (Google & Apple sign-in)
+- 🔐 Secure Authentication with Clerk (Google & Apple sign-in) 
 - 🛒 Cart, Favorites, Checkout & Orders Flow
 - 💳 Stripe-Powered Payments
 - 🗺️ Addresses System
